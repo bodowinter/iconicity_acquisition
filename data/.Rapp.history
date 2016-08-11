@@ -1,0 +1,1584 @@
+coefs=data.frame(summary(x)$coefficients)
+coefs
+coefs$p = 2*(1-pnorm(abs(coefs$t.value)))
+coefs
+coefs$sig = character(nrow(coefs))
+coefs[which(coefs$p < 0.05),]$sig = "*"#
+    coefs[which(coefs$p < 0.01),]$sig = "**"#
+    coefs[which(coefs$p < 0.001),]$sig = "***"
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv')#
+#
+## Check counts:#
+#
+length(unique(CHILD$name.1))	# 351 children#
+table(CHILD$name.1)
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()
+CHILD
+child_long <- table(CHILD$name.1, CHILD$age)
+child_long
+CHILD %>% filter(name.1 == 'zan')
+CHILD[CHILD$name.1 == 'zan', ]
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()
+CHILD
+all(CHILD$name == CHILD$name.1)
+child_long <- table(CHILD$name, CHILD$age)
+child_long
+apply(child_long, 1, rowSums)
+child_long
+str(child_long)
+as.matrix(child_long)
+apply(as.matrix(child_long), 1, rowSums)
+CHILD
+CHILD[, -1]
+CHILD <- CHILD[, -1]
+CHILD[CHILD$name != CHILD$name.1, ]
+write.table(CHILD, 'childesPlusIconNEW.csv', row.names = F, sep = ',')
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()
+length(unique(CHILD$name))	# 351 children
+table(CHILD$name)
+length(unique(CHILD$name))	# 351 children
+t
+table(CHILD$name)
+CHILD %>% filter(name == 'zm02gz3')
+child_long <- table(CHILD$name)
+child_long
+which(child_long <= 5)
+child_long[child_long <= 5]
+not_these <- names(child_long[child_long <= 5])
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 5])
+not_these
+nrow(CHILD)
+CHILD <- CHILD %>% filter(!name %in% not_these)
+nrow(CHILD)
+child_long <- table(CHILD$name, CHILD$age)
+child_long
+apply(child_long, 1, FUN = function(x) sum(x != 0))
+CHILD[CHILD$name == 'wil',]
+apply(child_long, 1, FUN = function(x) sum(x != 0))
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)
+nrow(CHILD)
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])
+not_these
+CHILD <- CHILD %>% filter(!name %in% not_these)
+not_these
+nrow(CHILD)
+head(CHILD)
+CHILD
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, name, age) %>%#
+		summarise(freq = sum(rawFreq))
+CHILD_freqs
+CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq))
+CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)
+CHILD_freqs <- CHILD_freqs %>%#
+	mutate(freq_weight = freq / freq_all)
+CHILD_freqs
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))
+CHILD_means
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = mean(rating))
+CHILD_means
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))
+range(CHILD_means$age)
+range(CHILD_means$iconicity)
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5))#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+CHILD_means
+summary(xmdl <- lmer(iconicity ~ age + (1|name), data = CHILD_means))
+summary(xmdl <- lmer(iconicity ~ age + (1 + age|name), data = CHILD_means))
+CHILD_means <- CHILD_means %>%#
+	mutate(age_c = age - mean(age),#
+		age_z = age_c / sd(age_c))
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means))
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means)
+anova(xmdl.null, xmdl)
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5))#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+c(10, 20)
+range(c(10, 20))
+diff(range(c(10, 20)))
+x <- c(10, 20)
+y <- c(15, 40)
+x / sum(x)
+x / max(x)
+y / max(y)
+(x - min(x)) / (diff(range(x))
+)
+(x - min(x)) / (diff(range(x)))
+(y - min(y)) / (diff(range(y)))
+CHILD_means %>% group_by(name) %>% mutate(age01 = (age - min(age)) / diff(range(age
+CHILD_means %>% group_by(name) %>% mutate(age01 = (age - min(age)) / diff(range(age)))
+CHILD_means <- CHILD_means %>%#
+	group_by(name) %>%#
+		mutate(age01 = (age - min(age)) / diff(range(age)))
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5))#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age01, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+summary(xmdl <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means, REML = F))
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means, REML = F)
+anova(xmdl.null, xmdl)
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+plot(fitted(xmdl), residuals(xmdl))
+library(mgcv)
+child_long <- table(CHILD_means$name, CHILD_means$age)
+child_long
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))
+child_long
+not_these <- names(child_long[child_long <= 10])
+not_these
+CHILD_means <- CHILD_means %>% filter(!name %in% not_these)
+summary(xgam <- bam(iconicity ~ s(t, k = 5), data = CHILD_means))
+summary(xgam <- bam(iconicity ~ s(age01, k = 5), data = CHILD_means))
+summary(xgam <- bam(iconicity ~ s(age01, k = 5) +#
+	s(age01, name, bs = 'fs', k = 5, m = 1),#
+	data = CHILD_means))
+CHILD_means$name
+CHILD_means$name <- as.factor(CHILD_means$name)#
+summary(xgam <- bam(iconicity ~ s(age01, k = 5) +#
+	s(age01, name, bs = 'fs', k = 5, m = 1),#
+	data = CHILD_means))
+summary(xgam <- bam(iconicity ~ s(age01, k = 5) +#
+	s(age01, name, bs = 'fs', k = 5, m = 1),#
+	data = CHILD_means, method = 'fREML'))
+library(itsadug)
+plot_smooth(xgam, rm.ranef = T, main = 'Effect of t(ime)')
+plot_smooth(xgam, 'age01', rm.ranef = T, main = 'Effect of t(ime)')
+plot_smooth(xgam, select = 2)
+p
+plot_smooth(xgam, 'age01', select = 2)
+plot_smooth(xgam, 'age01', select = 3)
+plot_smooth(xgam, 'age01', select = 4)
+summary(xgam)
+coef(xmdl)
+summary(xgam)$age_z
+summary(xgam)$name$age_z
+summary(xgam)$name
+summary(xmdl)$name
+coef(xmdl)$name
+coef(xmdl)$name
+coef(xmdl)$name
+coef(xmdl)$name[i, ]
+this_df <- unlist(coef(xmdl)$name[i, ])
+this_df
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5))#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Get only those kids for which there is longitudinal data, at least five time points:#
+#
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Sum frequencies over sessions:#
+#
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, name, age) %>%#
+		summarise(freq = sum(rawFreq))#
+#
+## Append cumulative frequencies per age:#
+#
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)#
+#
+## Compute weighted means:#
+#
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Compute 100% of completion (this normalizing by child for different observation lengths):#
+#
+CHILD_means <- CHILD_means %>%#
+	group_by(name) %>%#
+		mutate(age01 = (age - min(age)) / diff(range(age)))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age01, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Make a simple mixed model of this:#
+#
+CHILD_means <- CHILD_means %>%#
+	mutate(age_c = age - mean(age),#
+		age_z = age_c / sd(age_c))#
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)#
+#
+## Same for 0 to 1 range:#
+#
+summary(xmdl <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(0, 2), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+coef(xmdl)
+coef(xmdl)$name
+coef(xmdl)$name[, 2] > 0
+sum(coef(xmdl)$name[, 2] > 0)
+nrow(coef(xmdl)$name)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 2),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 2, 0.5), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 2),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 2, 0.5), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+summary(xmdl.red <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F))
+child_long <- table(CHILD_means$name, CHILD_means$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD_means_red <- CHILD_means %>% filter(!name %in% not_these)#
+#
+summary(xmdl.red <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F))
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F)
+anova(xmdl.null, xmdl)
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F)#
+anova(xmdl.null, xmdl.red)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 2),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means_red$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl.red)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 2, 0.5), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+nrow(CHILD_means_red)
+nrow(CHILD_means)
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Get only those kids for which there is longitudinal data, at least five time points:#
+#
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Sum frequencies over sessions:#
+#
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, name, age) %>%#
+		summarise(freq = sum(rawFreq))#
+#
+## Append cumulative frequencies per age:#
+#
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)#
+#
+## Compute weighted means:#
+#
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Compute 100% of completion (this normalizing by child for different observation lengths):#
+#
+CHILD_means <- CHILD_means %>%#
+	group_by(name) %>%#
+		mutate(age01 = (age - min(age)) / diff(range(age)))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age01, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Make a simple mixed model of this:#
+#
+CHILD_means <- CHILD_means %>%#
+	mutate(age_c = age - mean(age),#
+		age_z = age_c / sd(age_c))#
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)#
+#
+## Same for 0 to 1 range:#
+#
+summary(xmdl <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)#
+#
+## Check random effects:#
+#
+sum(coef(xmdl)$name[, 2] > 0)	# 10 children had positive slopes#
+nrow(coef(xmdl)$name)	# of 150!#
+#
+## A smaller model for those hat have at least 10 time points:#
+#
+child_long <- table(CHILD_means$name, CHILD_means$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD_means_red <- CHILD_means %>% filter(!name %in% not_these)
+nrow(CHILD_means)
+nrow(CHILD_means_red)
+child_long <- table(CHILD_means$name, CHILD_means$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 10])#
+CHILD_means_red <- CHILD_means %>% filter(!name %in% not_these)#
+#
+summary(xmdl.red <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means_red, REML = F)#
+anova(xmdl.null, xmdl.red)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 2),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means_red$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl.red)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 2, 0.5), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+sum(coef(xmdl.red)$name[, 2] > 0)	# 10 children had positive slopes
+nrow(coef(xmdl.red)$name)	# of 150!
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 2),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means_red$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl.red)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 2, 0.5), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 1.5),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means_red$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl.red)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 1.5, 0.25), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.15, font = 2, cex = 1.5)#
+box(lwd = 2)
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.75, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(0, 1), ylim = c(0, 1.5),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+all_children <- unique(CHILD_means_red$name)#
+for (i in 1:length(all_children)) {#
+	this_df <- unlist(coef(xmdl.red)$name[i, ])#
+	abline(a = this_df[1],#
+		b = this_df[2],#
+		lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+## Add axes:#
+axis(side = 1, at = seq(0, 1, 0.25),#
+	font = 2, lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Normalized Time', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(0, 1.5, 0.25), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Average Iconicity', side = 2,#
+	line = 5.5, font = 2, cex = 2)#
+mtext(text = '(Frequency-weighted)', side = 2,#
+	line = 3.45, font = 2, cex = 1.5)#
+box(lwd = 2)
+CHILD_means_red$name <- as.factor(CHILD_means_red$name)#
+summary(xgam <- bam(iconicity ~ s(age01, k = 5) +#
+	s(age01, name, bs = 'fs', k = 5, m = 1),#
+	data = CHILD_means_red, method = 'fREML'))
+library(itsadug)#
+plot_smooth(xgam, 'age01', rm.ranef = T, main = 'Effect of t(ime)')
+## Reboot of the iconicity ~ AOA analysis#
+## August 5, 2016#
+## Edit August 8, 2016#
+## Authors: Lynn K. Perry, Marcus Perlman, Bodo Winter,#
+## Dominic W. Massaro, Gary Lupyan#
+##------------------------------------------------------------------#
+## Pre-processing:#
+##------------------------------------------------------------------#
+#
+options(stringsAsFactors = F)#
+#
+## Libraries:#
+#
+library(car)#
+library(lme4)#
+library(readr)#
+library(stringr)#
+library(reshape2)#
+library(dplyr)#
+options(dplyr.width = Inf)#
+#
+## Load in data:#
+#
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+icon <- read.csv('iconicity.csv') %>% tbl_df()#
+# 'down' was redundantly collected in both list1 and list2#
+# here, the average rating for both 'down' was used#
+#
+## Get only those words that Lynn wants to analyze:#
+# (this excludes words from list1, as well as several compounds etc.)#
+#
+these_words <- dget('word_selection.txt')#
+icon <- icon %>% filter(Word %in% these_words)#
+#
+## Rename and log-transform frequencies:#
+#
+icon <- icon %>% rename(POS = SUBTLEX_dom_POS,#
+	Freq = SUBTLEX_Rawfreq) %>%#
+		mutate(LogFreq = log10(Freq))#
+#
+## Retrieve words with missing POS tags:#
+#
+POS <- icon %>%#
+	filter(is.na(POS) | POS %in% c('#N/A', 'Unclassified')) %>%#
+		select(Word)#
+POS$POS <- c('Verb', 'Verb', 'Verb', 'Verb',#
+	'Interjection', 'Noun', 'Onomatopoetic',#
+	'Onomatopoetic', 'Onomatopoetic', 'Onomatopoetic',#
+	'Onomatopoetic', 'Noun', 'Adjective', 'Adjective')#
+#
+## Merge missing words into there:#
+#
+icon[match(POS$Word, icon$Word), ]$POS <- POS$POS#
+#
+## Lump together lexical categories into meaningful subcategories:#
+#
+gram <- c('Article', 'Conjunction', 'Determiner',#
+	'Ex', 'Not', 'Number', 'Pronoun', 'Preposition', 'To')#
+icon[icon$POS %in% gram, ]$POS <- 'Grammatical'#
+#
+## Fix the 'Name' category:#
+# (includes a lot of things that are definitely not names)#
+#
+nam <- icon %>% filter(POS == 'Name') %>% select(Word)#
+nam$POS <- c('Adjective', 'Noun', 'Noun', 'Interjection',#
+	'Noun', 'Verb', 'Adjective', 'Noun', 'Noun',#
+	'Noun', 'Adjective', 'Noun', 'Verb', 'Adjective',#
+	'Adjective', rep('Noun', 17), 'Adjective', 'Adjective',#
+	rep('Noun', 8), 'Verb', 'Noun')#
+icon[icon$POS %in% 'Name', ]$POS <- nam$POS#
+#
+## Merge onomatopoetic and interjections together:#
+#
+icon[icon$POS == 'Onomatopoetic', ]$POS <- 'Interjection'#
+#
+## Add onomatopoeia information to dataset:#
+#
+onom <- dget('onomatopoetic_words.txt')#
+icon$Onomatopoetic <- 0#
+icon[icon$Word %in% onom, ]$Onomatopoetic <- 1#
+#
+## Merge American National Corpus frequency in there:#
+#
+ANC <- read.table('ANC-spoken-lemma.txt',#
+	header = F, skip = 13) %>% tbl_df()#
+ANC <- ANC %>% rename(Word = V1, Lemma = V2,#
+	POS = V3, Freq = V4)#
+#
+## Take aggregates by word form:#
+#
+ANC <- ANC %>% group_by(Word) %>% summarise(Freq = sum(Freq))#
+#
+## Log-transform this:#
+#
+ANC <- ANC %>% mutate(LogFreq = log10(Freq))#
+#
+## Merge into iconicity data frame:#
+#
+icon$ANC_LogFreq <- ANC[match(icon$Word, ANC$Word), ]$LogFreq#
+##------------------------------------------------------------------#
+## Analysis of age of acquisition ratings:#
+##------------------------------------------------------------------#
+#
+## Does iconicity predict age of acquisition?#
+#
+xmdl.AOA <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = icon)#
+summary(xmdl.AOA)	# yes!#
+anova(xmdl.AOA)		# yes!#
+#
+## Model validation:#
+#
+plot(fitted(xmdl.AOA),#
+	residuals(xmdl.AOA))	# o.k.; slight heteroskedasticity#
+qqnorm(residuals(xmdl.AOA))#
+qqline(residuals(xmdl.AOA))	# slight positive skew#
+#
+## Check for collinearity:#
+#
+vif(xmdl.AOA)	# no problem#
+#
+## Exclude onomatopoetic words:#
+#
+noOnom <- icon[!as.logical(icon$Onomatopoetic), ]#
+nrow(icon) - nrow(noOnom)	# excluded 27 datapoints#
+#
+## Is there iconicity ~ AOA even without onomatopoetics?#
+#
+xmdl.noOnom <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = noOnom)#
+summary(xmdl.noOnom)	# yes!#
+anova(xmdl.noOnom)		# yes!#
+#
+## Incorporate systematicity from Monaghan et al. (2014):#
+#
+sys <- read.csv('monaghan2014_systematicity.csv')#
+icon$Sys <- sys[match(icon$Word, sys$word), ]$relativeIconicity#
+#
+## Is there iconicity ~ AOA controlling for systematicity?#
+#
+xmdl.sys <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq + Sys,#
+	data = icon)#
+summary(xmdl.sys)	# yes!#
+anova(xmdl.sys)		# yes!#
+#
+## This also all works with SUBTLEX frquencies!#
+##------------------------------------------------------------------#
+## Added variable plot of iconicity after residualizing other effects:#
+##------------------------------------------------------------------#
+#
+## Model without iconicity:#
+#
+all_compl <- with(icon, complete.cases(KupermanAOA, Conc, POS,#
+	NMorph, ANC_LogFreq, Iconicity))#
+icon.noNA <- icon[all_compl, ]#
+xmdl.noicon <- lm(KupermanAOA ~ Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = icon.noNA)#
+xmdl <- lm(residuals(xmdl.noicon) ~ Iconicity, data = icon.noNA)#
+#
+## Extract predictions:#
+#
+xvals <- seq(from = -7, to = 7, by = 0.001)#
+xpred <- data.frame(Iconicity = xvals)#
+xpred <- as.data.frame(predict(xmdl, newdata = xpred, se.fit = T)[1:2])#
+xpred$UB <- xpred$fit + 1.96 * xpred$se.fit#
+xpred$LB <- xpred$fit - 1.96 * xpred$se.fit#
+#
+## Vector of words to display:#
+#
+these_words <- c('beep', 'click', 'moo', 'icky', 'roar', 'heaven', 'scratchy',#
+	'pajamas', 'silent', 'would', 'hamster', 'peekaboo',#
+	'quality', 'hum', 'drag', 'staff', 'incentive', 'computer',#
+	'scale', 'drag', 'buzz', 'pretend', 'clamp', 'canoe', 'mushy',#
+	'socialist', 'bureau')#
+these_words <- icon.noNA$Word %in% these_words#
+#
+## Make a plot of this:#
+#
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(-4, 6), ylim = c(-6, 8),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+points(x = icon.noNA[!these_words, ]$Iconicity,#
+	y = residuals(xmdl.noicon)[!these_words],#
+	pch = 21, cex = 1.25,#
+	bg = rgb(0, 0, 0, 0.4), col = NA)#
+text(x = icon.noNA[these_words, ]$Iconicity,#
+	y = residuals(xmdl.noicon)[these_words],#
+	labels = icon.noNA[these_words, ]$Word,#
+	pch = 21, cex = 1.1,#
+	bg = rgb(0, 0, 0, 0.4), col = NA)#
+polygon(x = c(xvals, rev(xvals)),#
+	y = c(xpred$UB, rev(xpred$LB)),#
+	border = NA, col = rgb(0, 0, 0, 0.4))#
+abline(xmdl, lwd = 2)#
+## Add axes:#
+axis(side = 1, at = seq(-4, 6, 2), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Average Iconicity Rating', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(-6, 8, 2), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Age of Acquisition Rating', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Residuals)', side = 2, line = 3.15,#
+	font = 2, cex = 1.5)#
+box(lwd = 2)
+library(lme4)
+citation('lme4')
+packageVersion('lme4')
+library(car)
+packageVersion('car')
+citation('car')
+citation('stringr')
+citation('reshape2')
+packageVersion('reshape2')
+packageVersion('readr')
+citation('readr')
+library(mgcv)
+citation('mgcv')
+packageVersion('mgcv')
+packageVersion('itsadug')
+citation('itsadug')
+## Reboot of the iconicity ~ AOA analysis#
+## August 5, 2016#
+## Edit August 8, 2016#
+## Authors: Lynn K. Perry, Marcus Perlman, Bodo Winter,#
+## Dominic W. Massaro, Gary Lupyan#
+##------------------------------------------------------------------#
+## Pre-processing:#
+##------------------------------------------------------------------#
+#
+options(stringsAsFactors = F)#
+#
+## Libraries:#
+#
+library(car)#
+library(lme4)#
+library(mgcv)#
+library(readr)#
+library(stringr)#
+library(reshape2)#
+library(dplyr)#
+options(dplyr.width = Inf)#
+#
+## Load in data:#
+#
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+icon <- read.csv('iconicity.csv') %>% tbl_df()#
+# 'down' was redundantly collected in both list1 and list2#
+# here, the average rating for both 'down' was used#
+#
+## Get only those words that Lynn wants to analyze:#
+# (this excludes words from list1, as well as several compounds etc.)#
+#
+these_words <- dget('word_selection.txt')#
+icon <- icon %>% filter(Word %in% these_words)#
+#
+## Rename and log-transform frequencies:#
+#
+icon <- icon %>% rename(POS = SUBTLEX_dom_POS,#
+	Freq = SUBTLEX_Rawfreq) %>%#
+		mutate(LogFreq = log10(Freq))#
+#
+## Retrieve words with missing POS tags:#
+#
+POS <- icon %>%#
+	filter(is.na(POS) | POS %in% c('#N/A', 'Unclassified')) %>%#
+		select(Word)#
+POS$POS <- c('Verb', 'Verb', 'Verb', 'Verb',#
+	'Interjection', 'Noun', 'Onomatopoetic',#
+	'Onomatopoetic', 'Onomatopoetic', 'Onomatopoetic',#
+	'Onomatopoetic', 'Noun', 'Adjective', 'Adjective')#
+#
+## Merge missing words into there:#
+#
+icon[match(POS$Word, icon$Word), ]$POS <- POS$POS#
+#
+## Lump together lexical categories into meaningful subcategories:#
+#
+gram <- c('Article', 'Conjunction', 'Determiner',#
+	'Ex', 'Not', 'Number', 'Pronoun', 'Preposition', 'To')#
+icon[icon$POS %in% gram, ]$POS <- 'Grammatical'#
+#
+## Fix the 'Name' category:#
+# (includes a lot of things that are definitely not names)#
+#
+nam <- icon %>% filter(POS == 'Name') %>% select(Word)#
+nam$POS <- c('Adjective', 'Noun', 'Noun', 'Interjection',#
+	'Noun', 'Verb', 'Adjective', 'Noun', 'Noun',#
+	'Noun', 'Adjective', 'Noun', 'Verb', 'Adjective',#
+	'Adjective', rep('Noun', 17), 'Adjective', 'Adjective',#
+	rep('Noun', 8), 'Verb', 'Noun')#
+icon[icon$POS %in% 'Name', ]$POS <- nam$POS#
+#
+## Merge onomatopoetic and interjections together:#
+#
+icon[icon$POS == 'Onomatopoetic', ]$POS <- 'Interjection'#
+#
+## Add onomatopoeia information to dataset:#
+#
+onom <- dget('onomatopoetic_words.txt')#
+icon$Onomatopoetic <- 0#
+icon[icon$Word %in% onom, ]$Onomatopoetic <- 1#
+#
+## Merge American National Corpus frequency in there:#
+#
+ANC <- read.table('ANC-spoken-lemma.txt',#
+	header = F, skip = 13) %>% tbl_df()#
+ANC <- ANC %>% rename(Word = V1, Lemma = V2,#
+	POS = V3, Freq = V4)#
+#
+## Take aggregates by word form:#
+#
+ANC <- ANC %>% group_by(Word) %>% summarise(Freq = sum(Freq))#
+#
+## Log-transform this:#
+#
+ANC <- ANC %>% mutate(LogFreq = log10(Freq))#
+#
+## Merge into iconicity data frame:#
+#
+icon$ANC_LogFreq <- ANC[match(icon$Word, ANC$Word), ]$LogFreq#
+##------------------------------------------------------------------#
+## Analysis of age of acquisition ratings:#
+##------------------------------------------------------------------#
+#
+## Does iconicity predict age of acquisition?#
+#
+xmdl.AOA <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = icon)#
+summary(xmdl.AOA)	# yes!#
+anova(xmdl.AOA)		# yes!#
+#
+## Model validation:#
+#
+plot(fitted(xmdl.AOA),#
+	residuals(xmdl.AOA))	# o.k.; slight heteroskedasticity#
+qqnorm(residuals(xmdl.AOA))#
+qqline(residuals(xmdl.AOA))	# slight positive skew#
+#
+## Check for collinearity:#
+#
+vif(xmdl.AOA)	# no problem#
+#
+## Exclude onomatopoetic words:#
+#
+noOnom <- icon[!as.logical(icon$Onomatopoetic), ]#
+nrow(icon) - nrow(noOnom)	# excluded 27 datapoints#
+#
+## Is there iconicity ~ AOA even without onomatopoetics?#
+#
+xmdl.noOnom <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = noOnom)#
+summary(xmdl.noOnom)	# yes!#
+anova(xmdl.noOnom)		# yes!#
+#
+## Incorporate systematicity from Monaghan et al. (2014):#
+#
+sys <- read.csv('monaghan2014_systematicity.csv')#
+icon$Sys <- sys[match(icon$Word, sys$word), ]$relativeIconicity#
+#
+## Is there iconicity ~ AOA controlling for systematicity?#
+#
+xmdl.sys <- lm(KupermanAOA ~ Iconicity + Conc +#
+	POS + NMorph + ANC_LogFreq + Sys,#
+	data = icon)#
+summary(xmdl.sys)	# yes!#
+anova(xmdl.sys)		# yes!#
+#
+## This also all works with SUBTLEX frquencies!#
+##------------------------------------------------------------------#
+## Added variable plot of iconicity after residualizing other effects:#
+##------------------------------------------------------------------#
+#
+## Model without iconicity:#
+#
+all_compl <- with(icon, complete.cases(KupermanAOA, Conc, POS,#
+	NMorph, ANC_LogFreq, Iconicity))#
+icon.noNA <- icon[all_compl, ]#
+xmdl.noicon <- lm(KupermanAOA ~ Conc +#
+	POS + NMorph + ANC_LogFreq,#
+	data = icon.noNA)#
+xmdl <- lm(residuals(xmdl.noicon) ~ Iconicity, data = icon.noNA)#
+#
+## Extract predictions:#
+#
+xvals <- seq(from = -7, to = 7, by = 0.001)#
+xpred <- data.frame(Iconicity = xvals)#
+xpred <- as.data.frame(predict(xmdl, newdata = xpred, se.fit = T)[1:2])#
+xpred$UB <- xpred$fit + 1.96 * xpred$se.fit#
+xpred$LB <- xpred$fit - 1.96 * xpred$se.fit#
+#
+## Vector of words to display:#
+#
+these_words <- c('beep', 'click', 'moo', 'icky', 'roar', 'heaven', 'scratchy',#
+	'pajamas', 'silent', 'would', 'hamster', 'peekaboo',#
+	'quality', 'hum', 'drag', 'staff', 'incentive', 'computer',#
+	'scale', 'drag', 'buzz', 'pretend', 'clamp', 'canoe', 'mushy',#
+	'socialist', 'bureau')#
+these_words <- icon.noNA$Word %in% these_words#
+#
+## Make a plot of this:#
+#
+quartz('', 9, 6.5)#
+par(mai = c(1.5, 1.5, 0.25, 0.25))#
+plot(1, 1, type = 'n',#
+	xlim = c(-4, 6), ylim = c(-6, 8),#
+	xlab = '', ylab = '',#
+	xaxt = 'n', yaxt = 'n')#
+points(x = icon.noNA[!these_words, ]$Iconicity,#
+	y = residuals(xmdl.noicon)[!these_words],#
+	pch = 21, cex = 1.25,#
+	bg = rgb(0, 0, 0, 0.4), col = NA)#
+text(x = icon.noNA[these_words, ]$Iconicity,#
+	y = residuals(xmdl.noicon)[these_words],#
+	labels = icon.noNA[these_words, ]$Word,#
+	pch = 21, cex = 1.1,#
+	bg = rgb(0, 0, 0, 0.4), col = NA)#
+polygon(x = c(xvals, rev(xvals)),#
+	y = c(xpred$UB, rev(xpred$LB)),#
+	border = NA, col = rgb(0, 0, 0, 0.4))#
+abline(xmdl, lwd = 2)#
+## Add axes:#
+axis(side = 1, at = seq(-4, 6, 2), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25)#
+mtext(text = 'Average Iconicity Rating', side = 1,#
+	line = 4, font = 2, cex = 2)#
+axis(side = 2, at = seq(-6, 8, 2), font = 2,#
+	lwd.ticks = 2, cex.axis = 1.25, las = 2)#
+mtext(text = 'Age of Acquisition Rating', side = 2,#
+	line = 5, font = 2, cex = 2)#
+mtext(text = '(Residuals)', side = 2, line = 3.15,#
+	font = 2, cex = 1.5)#
+box(lwd = 2)#
+##------------------------------------------------------------------#
+## Analysis of child & adult production frequencies:#
+##------------------------------------------------------------------#
+#
+## Get subset of relevant variables:#
+#
+childes <- icon %>% filter(!is.na(ChildesAge12Freq)) %>% #
+	select(Word, Iconicity, ParentalInputRawFreq,#
+	LogFreq, ANC_LogFreq,#
+	Conc, NMorph, POS,#
+	ChildesAge12Freq:ChildesAge69Freq)#
+#
+## Reshape into long format:#
+#
+childes <- melt(childes, id.vars = c('Word', 'Iconicity', 'ParentalInputRawFreq',#
+	'LogFreq', 'ANC_LogFreq', 'Conc', 'NMorph', 'POS')) %>% tbl_df()#
+#
+## Rename:#
+#
+childes <- childes %>% rename(Age = variable, Freq = value)#
+#
+## Log-transform parental input frequency and children's frequency:#
+#
+childes <- childes %>% mutate(LogParent = log10(ParentalInputRawFreq),#
+	LogChild = log10(Freq + 1))#
+#
+## Clean up the age column:#
+#
+childes <- childes %>%#
+	mutate(Age = as.numeric(str_extract(as.character(Age), '[0-9]+')))#
+#
+## Since we are going to fit an interaction, we should center:#
+#
+childes <- childes %>% mutate(Age_c = Age - mean(Age),#
+	Iconicity_c = Iconicity - mean(Iconicity),#
+	Age_z = Age_c / sd(Age_c),#
+	Iconicity_z = Iconicity / sd(Iconicity),#
+	Conc_c = Conc - mean(Conc, na.rm = T),#
+	NMorph_c = NMorph - mean(NMorph, na.rm = T),#
+	ANC_LogFreq_c = ANC_LogFreq - mean(ANC_LogFreq, na.rm = T),#
+	LogParent_c = LogParent - mean(LogParent, na.rm = T))#
+#
+## Make a Poisson model out of this:#
+#
+xmdl <- lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes, REML = F)#
+summary(xmdl)	# inspect#
+#
+## Model validation:#
+#
+plot(fitted(xmdl), residuals(xmdl))#
+qqnorm(residuals(xmdl))#
+qqline(residuals(xmdl))#
+#
+## Check variance inflation facors in corresponding linear model:#
+#
+childmdl <- lm(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS,#
+	data = childes)#
+vif(childmdl)	# no reason for concern, all < 3#
+#
+## Construct comparison models for likelihood ratio tests:#
+#
+xmdl.noint <- lmer(LogChild ~ Iconicity_z + Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes, REML = F)#
+xmdl.noage <- lmer(LogChild ~ Iconicity_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes, REML = F)#
+xmdl.noicon <- lmer(LogChild ~ Age_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes, REML = F)#
+#
+## Perform likelihood ratio tests:#
+#
+anova(xmdl.noint, xmdl, test = 'Chisq')
+head(childes)
+head(icon)
+childes <- icon %>% filter(!is.na(ChildesAge12Freq)) %>% #
+	select(Word, Iconicity, ParentalInputRawFreq,#
+	Onomatopoetic,#
+	LogFreq, ANC_LogFreq,#
+	Conc, NMorph, POS,#
+	ChildesAge12Freq:ChildesAge69Freq)#
+#
+## Reshape into long format:#
+#
+childes <- melt(childes, id.vars = c('Word', 'Iconicity', 'ParentalInputRawFreq',#
+	'Onomatopoetic', 'LogFreq', 'ANC_LogFreq', 'Conc', 'NMorph', 'POS')) %>% tbl_df()#
+#
+## Rename:#
+#
+childes <- childes %>% rename(Age = variable, Freq = value)#
+#
+## Log-transform parental input frequency and children's frequency:#
+#
+childes <- childes %>% mutate(LogParent = log10(ParentalInputRawFreq),#
+	LogChild = log10(Freq + 1))#
+#
+## Clean up the age column:#
+#
+childes <- childes %>%#
+	mutate(Age = as.numeric(str_extract(as.character(Age), '[0-9]+')))#
+#
+## Since we are going to fit an interaction, we should center:#
+#
+childes <- childes %>% mutate(Age_c = Age - mean(Age),#
+	Iconicity_c = Iconicity - mean(Iconicity),#
+	Age_z = Age_c / sd(Age_c),#
+	Iconicity_z = Iconicity / sd(Iconicity),#
+	Conc_c = Conc - mean(Conc, na.rm = T),#
+	NMorph_c = NMorph - mean(NMorph, na.rm = T),#
+	ANC_LogFreq_c = ANC_LogFreq - mean(ANC_LogFreq, na.rm = T),#
+	LogParent_c = LogParent - mean(LogParent, na.rm = T))#
+#
+## Make a Poisson model out of this:
+head(childes)
+childes_noOnom <- childes %>% filter(Onomatopoetic == 0)#
+xmdl.noOnon <- lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes_noOnom, REML = F)
+xmdl.noOnom <- lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes_noOnom, REML = F)
+xmdl.noOnom.noint <- lmer(LogChild ~ Iconicity_z + Age_z + #
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + #
+	(1 + Age_z|Word), data = childes_noOnom, REML = F)
+anova(xmdl.noOnom.noint, xmdl.noOnom, test = 'Chisq')
+summary(xmdl.adult <- lm(ANC_LogFreq ~ Iconicity_z + #
+	Conc_c + NMorph_c + POS, data = icon))
+icon <- icon %>% mutate(Conc_c = Conc - mean(Conc, na.rm = T),#
+	NMorph_c = NMorph - mean(NMorph, na.rm = T),#
+	Iconicity_z = (Iconicity - mean(Iconicity, na.rm = T)) / sd(Iconicity, na.rm = T))#
+summary(xmdl.adult <- lm(ANC_LogFreq ~ Iconicity_z + #
+	Conc_c + NMorph_c + POS, data = icon))
+anova(xmdl.adult)
+icon <- icon %>% mutate(LogParent = log10(ParentalInputRawFreq),#
+	ANC_LogFreq_c = ANC_LogFreq - mean(ANC_LogFreq, na.rm = T))#
+summary(xmdl.parent <- lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +#
+	Conc_c + NMorph_c + POS, data = icon))
+anova(xmdl.parent)
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Get only those kids for which there is longitudinal data, at least five time points:#
+#
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Sum frequencies over sessions:#
+#
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, name, age) %>%#
+		summarise(freq = sum(rawFreq))#
+#
+## Append cumulative frequencies per age:#
+#
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)#
+#
+## Compute weighted means:#
+#
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Compute 100% of completion (this normalizing by child for different observation lengths):#
+#
+CHILD_means <- CHILD_means %>%#
+	group_by(name) %>%#
+		mutate(age01 = (age - min(age)) / diff(range(age)))#
+#
+## Make a line plot of this:#
+#
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age01, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}#
+#
+## Make a simple mixed model of this:#
+#
+CHILD_means <- CHILD_means %>%#
+	mutate(age_c = age - mean(age),#
+		age_z = age_c / sd(age_c))#
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+coef(xmdl)
+coef(xmdl)$name
+nrow(coef(xmdl)$name)
+anova(xmdl.null, xmdl)
+coef(xmdl)
+fixef(xmdl)
+fixef(xmdl)[1]
+fixef(xmdl)[1] + 1 * fixef(xmdl)[2]
+head(CHILD_means)
+head(CHILD)
+head(CHILD)
+head(childes)
+head(icon)
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Add covariates:#
+#
+these_columns <- c('ANC_LogFreq_c', 'POS', 'NMorph_c', 'Conc_c')#
+CHILD <- cbind(CHILD,#
+	childes[match(CHILD$Word, childes$Word), these_columns])
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Add covariates:#
+#
+these_columns <- c('ANC_LogFreq_c', 'POS', 'NMorph_c', 'Conc_c')#
+CHILD <- cbind(CHILD,#
+	childes[match(CHILD$Word, childes$Word), these_columns])#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Get only those kids for which there is longitudinal data, at least five time points:#
+#
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Sum frequencies over sessions:#
+#
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, ANC_LogFreq_c, POS, NMorph_c,#
+			Conc_c, name, age) %>%#
+		summarise(freq = sum(rawFreq))#
+#
+## Append cumulative frequencies per age:#
+#
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, ANC_LogFreq_c, POS, NMorph_c, Conc_c,#
+		age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)#
+#
+## Compute weighted means:#
+#
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, ANC_LogFreq_c, POS, NMorph_c, Conc_c, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))
+CHILD_means
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq))
+CHILD_means
+CHILD_freqs
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq),#
+			NMorph_c = weighted.mean(NMorph_c, freq, na.rm = T),#
+			Conc_c = weighted.mean(Conc_c, freq, na.rm = T),#
+			ANC_LogFreq_c = weighted.mean(ANC_LogFreq_c, freq, na.rm = T))
+CHILD_means
+CHILD_means
+plot(1, 1, xlim = c(12, 117),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+CHILD_means <- CHILD_means %>%#
+	group_by(name) %>%#
+		mutate(age01 = (age - min(age)) / diff(range(age)))
+plot(1, 1, xlim = c(0, 1),#
+	ylim = c(-1, 3.5), type = 'n')#
+all_children <- unique(CHILD_means$name)#
+for (i in 1:length(all_children)) {#
+	this_child <- all_children[i]#
+	this_df <- filter(CHILD_means, name == this_child)#
+	points(this_df$age01, this_df$iconicity,#
+		type = 'l', lwd = 2, col = rgb(0, 0, 0, 0.4))#
+	}
+CHILD_means <- CHILD_means %>%#
+	mutate(age_c = age - mean(age),#
+		age_z = age_c / sd(age_c))#
+summary(xmdl <- lmer(iconicity ~ age_z + (1 + age_z|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age_z|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+## Same for 0 to 1 range:#
+#
+summary(xmdl <- lmer(iconicity ~ age01 + (1 + age01|name),#
+	data = CHILD_means, REML = F))#
+xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	data = CHILD_means, REML = F)#
+anova(xmdl.null, xmdl)
+head(CHILD_means)
+summary(xmdl.covar <- lmer(iconicity ~ age01 +#
+	NMorph_c + ANC_LogFreq_c + Conc_ + #
+	(1 + age01|name),#
+	data = CHILD_means, REML = F))
+CHILD_means
+summary(xmdl.covar <- lmer(iconicity ~ age01 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	(1 + age01|name),#
+	data = CHILD_means, REML = F))
+xmdl.covar.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	data = CHILD_means, REML = F)
+xmdl.covar.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	data = CHILD_means, REML = F)
+summary(xmdl.covar <- lmer(iconicity ~ age01 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	(1 + age01|name),#
+	data = CHILD_means, REML = F)
+summary(xmdl.covar <- lmer(iconicity ~ age01 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	(1 + age01|name),#
+	data = CHILD_means, REML = F)
+xmdl.covar.null <- lmer(iconicity ~ 1 + (1 + age01|name),#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	data = CHILD_means, REML = F)
+xmdl.covar.null <- lmer(iconicity ~ 1 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c +#
+	(1 + age01|name), #
+	data = CHILD_means, REML = F)
+anova(xmdl.null, xmdl)
+anova(xmdl.covar.null, xmdl.covar)
+140 / 150
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Add covariates:#
+#
+these_columns <- c('ANC_LogFreq_c', 'POS', 'NMorph_c', 'Conc_c', 'Onomatopoetic')#
+CHILD <- cbind(CHILD,#
+	childes[match(CHILD$Word, childes$Word), these_columns])
+setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')#
+CHILD <- read_csv('childesPlusIconNEW.csv') %>% tbl_df()#
+#
+## Check counts:#
+#
+length(unique(CHILD$name))	# 323 children#
+table(CHILD$name)#
+#
+## Add covariates:#
+#
+these_columns <- c('ANC_LogFreq_c', 'POS', 'NMorph_c', 'Conc_c', 'Onomatopoetic')#
+CHILD <- cbind(CHILD,#
+	childes[match(CHILD$Word, childes$Word), these_columns])#
+#
+## Get rid of all children with less than 30 data points:#
+#
+child_long <- table(CHILD$name)#
+not_these <- names(child_long[child_long <= 30])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Get only those kids for which there is longitudinal data, at least five time points:#
+#
+child_long <- table(CHILD$name, CHILD$age)#
+child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))#
+not_these <- names(child_long[child_long <= 5])#
+CHILD <- CHILD %>% filter(!name %in% not_these)#
+#
+## Sum frequencies over sessions:#
+#
+CHILD_freqs <- CHILD %>%#
+	group_by(Word, rating, ANC_LogFreq_c, POS, NMorph_c, Onomatopoetic, #
+			Conc_c, name, age) %>%#
+		summarise(freq = sum(rawFreq))#
+#
+## Append cumulative frequencies per age:#
+#
+CHILD_freqs <- CHILD_freqs %>%#
+	group_by(name, ANC_LogFreq_c, POS, NMorph_c, Conc_c, Onomatopoetic,#
+		age) %>%#
+	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)
+CHILD_means <- CHILD_freqs %>%#
+	group_by(name, age) %>%#
+		summarise(iconicity = weighted.mean(rating, freq),#
+			NMorph_c = weighted.mean(NMorph_c, freq, na.rm = T),#
+			Conc_c = weighted.mean(Conc_c, freq, na.rm = T),#
+			ANC_LogFreq_c = weighted.mean(ANC_LogFreq_c, freq, na.rm = T))
+CHILD_means_noOnom <- CHILD_freqs %>%#
+	filter(Onomatopoetic != 0) %>% #
+		group_by(name, age) %>%#
+			summarise(iconicity = weighted.mean(rating, freq),#
+				NMorph_c = weighted.mean(NMorph_c, freq, na.rm = T),#
+				Conc_c = weighted.mean(Conc_c, freq, na.rm = T),#
+				ANC_LogFreq_c = weighted.mean(ANC_LogFreq_c, freq, na.rm = T))
+summary(xmdl.covar <- lmer(iconicity ~ age01 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	(1 + age01|name),#
+	data = CHILD_means_noOnom, REML = F))#
+xmdl.covar.null <- lmer(iconicity ~ 1 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c +#
+	(1 + age01|name), #
+	data = CHILD_means_noOnom, REML = F)#
+anova(xmdl.covar.null, xmdl.covar, test = 'Chisq')
+CHILD_means_noOnom <- CHILD_freqs %>%#
+	filter(Onomatopoetic != 0) %>% #
+		group_by(name, age01) %>%#
+			summarise(iconicity = weighted.mean(rating, freq),#
+				NMorph_c = weighted.mean(NMorph_c, freq, na.rm = T),#
+				Conc_c = weighted.mean(Conc_c, freq, na.rm = T),#
+				ANC_LogFreq_c = weighted.mean(ANC_LogFreq_c, freq, na.rm = T))
+CHILD_means_noOnom <- CHILD_freqs %>%#
+	filter(Onomatopoetic != 0) %>% #
+		group_by(name, age) %>%#
+			summarise(iconicity = weighted.mean(rating, freq),#
+				NMorph_c = weighted.mean(NMorph_c, freq, na.rm = T),#
+				Conc_c = weighted.mean(Conc_c, freq, na.rm = T),#
+				ANC_LogFreq_c = weighted.mean(ANC_LogFreq_c, freq, na.rm = T))#
+summary(xmdl.covar <- lmer(iconicity ~ age +#
+	NMorph_c + ANC_LogFreq_c + Conc_c + #
+	(1 + age|name),#
+	data = CHILD_means_noOnom, REML = F))#
+xmdl.covar.null <- lmer(iconicity ~ 1 +#
+	NMorph_c + ANC_LogFreq_c + Conc_c +#
+	(1 + age|name), #
+	data = CHILD_means_noOnom, REML = F)#
+anova(xmdl.covar.null, xmdl.covar, test = 'Chisq')

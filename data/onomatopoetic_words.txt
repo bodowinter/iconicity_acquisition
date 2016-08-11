@@ -1,0 +1,4 @@
+c("arf", "baa", "bleep", "buzz", "bye", "choo-choo", "cockadoodledoo", 
+"coo", "grr", "hello", "hi", "hoot", "hum", "hush", "moo", "no", 
+"oink", "ouch", "owie", "peekaboo", "purr", "quack", "shh", "vroom", 
+"woof", "yes", "yum")
