@@ -24,6 +24,11 @@ library(dplyr)
 options(stringsAsFactors = F)
 options(dplyr.width = Inf)
 
+## Define functions for less space:
+
+mean.na <- function(x) mean(x, na.rm = T)
+sd.na <- function(x) sd(x, na.rm = T)
+
 ## Load in data:
 
 setwd('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/data/')
@@ -37,11 +42,11 @@ icon <- read.csv('iconicity.csv') %>% tbl_df()
 these_words <- dget('word_selection.txt')
 icon <- icon %>% filter(Word %in% these_words)
 
-## Rename and log-transform frequencies:
+## Rename frequencies:
 
-icon <- icon %>% rename(POS = SUBTLEX_dom_POS,
-	Freq = SUBTLEX_Rawfreq) %>%
-		mutate(LogFreq = log10(Freq))
+icon <- icon %>%
+	rename(POS = SUBTLEX_dom_POS,
+		Freq = SUBTLEX_Rawfreq)
 
 ## Retrieve words with missing POS tags:
 
@@ -66,7 +71,9 @@ icon[icon$POS %in% gram, ]$POS <- 'Grammatical'
 ## Fix the 'Name' category:
 # (includes a lot of things that are definitely not names)
 
-nam <- icon %>% filter(POS == 'Name') %>% select(Word)
+nam <- icon %>%
+	filter(POS == 'Name') %>%
+		select(Word)
 nam$POS <- c('Adjective', 'Noun', 'Noun', 'Interjection',
 	'Noun', 'Verb', 'Adjective', 'Noun', 'Noun',
 	'Noun', 'Adjective', 'Noun', 'Verb', 'Adjective',
@@ -88,20 +95,40 @@ icon[icon$Word %in% onom, ]$Onomatopoetic <- 1
 
 ANC <- read.table('ANC-spoken-lemma.txt',
 	header = F, skip = 13) %>% tbl_df()
-ANC <- ANC %>% rename(Word = V1, Lemma = V2,
-	POS = V3, Freq = V4)
+ANC <- ANC %>%
+	rename(Word = V1, Lemma = V2,
+		POS = V3, Freq = V4)
 
 ## Take aggregates by word form:
 
-ANC <- ANC %>% group_by(Word) %>% summarise(Freq = sum(Freq))
-
-## Log-transform this:
-
-ANC <- ANC %>% mutate(LogFreq = log10(Freq))
+ANC <- ANC %>%
+	group_by(Word) %>%
+		summarise(Freq = sum(Freq))
 
 ## Merge into iconicity data frame:
 
-icon$ANC_LogFreq <- ANC[match(icon$Word, ANC$Word), ]$LogFreq
+icon$ANC_Freq <- ANC[match(icon$Word, ANC$Word), ]$Freq
+
+## Make NA's into 0's, since they are truly unattested:
+
+icon <- icon %>%
+	mutate(ANC_Freq = ifelse(is.na(ANC_Freq), 0, ANC_Freq),
+		Freq = ifelse(is.na(Freq), 0, Freq))
+
+## Log-transform frequencies:
+
+icon <- icon %>%
+	mutate(LogFreq = log10(Freq + 1),
+		ANC_LogFreq = log10(ANC_Freq + 1),
+		LogParent = log10(ParentalInputRawFreq))
+
+## Center variabls for models later:
+
+icon <- icon %>%
+	mutate(Conc_c = Conc - mean.na(Conc),
+		NMorph_c = NMorph - mean.na(NMorph),
+		Iconicity_z = (Iconicity - mean.na(Iconicity)) / sd.na(Iconicity),
+		ANC_LogFreq_c = ANC_LogFreq - mean.na(ANC_LogFreq))
 
 
 
@@ -155,6 +182,7 @@ summary(xmdl.sys)	# yes!
 anova(xmdl.sys)		# yes!
 
 ## This also all works with SUBTLEX frquencies!
+## Just change "ANC_LogFreq" to "LogFreq" to assess this
 
 
 
@@ -182,11 +210,12 @@ xpred$LB <- xpred$fit - 1.96 * xpred$se.fit
 
 ## Vector of words to display:
 
-these_words <- c('beep', 'click', 'moo', 'icky', 'roar', 'heaven', 'scratchy',
+these_words <- c('beep', 'click', 'icky', 'roar', 'heaven', 'scratchy',
 	'pajamas', 'silent', 'would', 'hamster', 'peekaboo',
 	'quality', 'hum', 'drag', 'staff', 'incentive', 'computer',
 	'scale', 'drag', 'buzz', 'pretend', 'clamp', 'canoe', 'mushy',
-	'socialist', 'bureau')
+	'socialist', 'bureau', 'twirl', 'same', 'mini',
+	'raspy', 'zoom', 'crunch')
 these_words <- icon.noNA$Word %in% these_words
 
 ## Make a plot of this:
@@ -223,6 +252,11 @@ mtext(text = '(Residuals)', side = 2, line = 3.15,
 	font = 2, cex = 1.5)
 box(lwd = 2)
 
+## To identify certain points interactively on the plot:
+
+# identify(icon.noNA[!these_words, ]$Iconicity,
+	# residuals(xmdl.noicon)[!these_words])
+
 
 
 
@@ -232,12 +266,21 @@ box(lwd = 2)
 
 ## Get subset of relevant variables:
 
-childes <- icon %>% filter(!is.na(ChildesAge12Freq)) %>% 
-	select(Word, Iconicity, ParentalInputRawFreq,
-	Onomatopoetic,
-	LogFreq, ANC_LogFreq,
-	Conc, NMorph, POS,
-	ChildesAge12Freq:ChildesAge69Freq)
+childes <- icon %>%
+	filter(!is.na(ChildesAge12Freq)) %>% 
+		select(Word, Iconicity, ParentalInputRawFreq,
+			Onomatopoetic,
+			LogFreq, ANC_LogFreq,
+			Conc, NMorph, POS,
+			ChildesAge12Freq:ChildesAge69Freq)
+
+## Get average number of words per age:
+
+these_columns <- grep('ChildesAge', colnames(childes), value = T)
+childes_agr <- apply(childes[, these_columns], 2, sum)
+childes_agr <- data.frame(Age = these_columns,
+	OverallFreq = childes_agr)
+rownames(childes_agr) <- 1:nrow(childes_agr)
 
 ## Reshape into long format:
 
@@ -246,12 +289,24 @@ childes <- melt(childes, id.vars = c('Word', 'Iconicity', 'ParentalInputRawFreq'
 
 ## Rename:
 
-childes <- childes %>% rename(Age = variable, Freq = value)
+childes <- childes %>%
+	rename(Age = variable, Freq = value)
+
+## Add sum of frequency per age to this:
+
+childes <- childes %>% left_join(childes_agr)
 
 ## Log-transform parental input frequency and children's frequency:
 
-childes <- childes %>% mutate(LogParent = log10(ParentalInputRawFreq),
-	LogChild = log10(Freq + 1))
+childes <- childes %>%
+	mutate(LogParent = log10(ParentalInputRawFreq + 1),
+		LogChild = log10(Freq + 1),
+		LogOverall = log10(OverallFreq + 1))
+
+## Compute a relative production frequency measure:
+
+childes <- childes %>%
+	mutate(LogRelative = LogChild / LogOverall)
 
 ## Clean up the age column:
 
@@ -260,19 +315,21 @@ childes <- childes %>%
 
 ## Since we are going to fit an interaction, we should center:
 
-childes <- childes %>% mutate(Age_c = Age - mean(Age),
-	Iconicity_c = Iconicity - mean(Iconicity),
-	Age_z = Age_c / sd(Age_c),
-	Iconicity_z = Iconicity / sd(Iconicity),
-	Conc_c = Conc - mean(Conc, na.rm = T),
-	NMorph_c = NMorph - mean(NMorph, na.rm = T),
-	ANC_LogFreq_c = ANC_LogFreq - mean(ANC_LogFreq, na.rm = T),
-	LogParent_c = LogParent - mean(LogParent, na.rm = T))
+childes <- childes %>%
+	mutate(Age_c = Age - mean(Age),
+		Iconicity_c = Iconicity - mean(Iconicity),
+		Age_z = Age_c / sd(Age_c),
+		Iconicity_z = Iconicity / sd(Iconicity),
+		Conc_c = Conc - mean.na(Conc),
+		NMorph_c = NMorph - mean.na(NMorph),
+		ANC_LogFreq_c = ANC_LogFreq - mean.na(ANC_LogFreq),
+		LogOverall_c = LogOverall - mean.na(LogOverall),
+		LogParent_c = LogParent - mean.na(LogParent))
 
-## Make a Poisson model out of this:
+## Make a mixed effects model out of this:
 
 xmdl <- lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + LogOverall_c + 
 	(1 + Age_z|Word), data = childes, REML = F)
 summary(xmdl)	# inspect
 
@@ -285,60 +342,70 @@ qqline(residuals(xmdl))
 ## Check variance inflation facors in corresponding linear model:
 
 childmdl <- lm(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS,
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS,
 	data = childes)
-vif(childmdl)	# no reason for concern, all < 3
+vif(childmdl)	# no reason for concern, all < 4
 
 ## Construct comparison models for likelihood ratio tests:
 
 xmdl.noint <- lmer(LogChild ~ Iconicity_z + Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
 	(1 + Age_z|Word), data = childes, REML = F)
 xmdl.noage <- lmer(LogChild ~ Iconicity_z + Iconicity_z:Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
 	(1 + Age_z|Word), data = childes, REML = F)
 xmdl.noicon <- lmer(LogChild ~ Age_z + Iconicity_z:Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
 	(1 + Age_z|Word), data = childes, REML = F)
 
 ## Perform likelihood ratio tests:
 
-anova(xmdl.noint, xmdl, test = 'Chisq')
-anova(xmdl.noage, xmdl, test = 'Chisq')	# p < 0.001
+anova(xmdl.noint, xmdl, test = 'Chisq')		# p < 0.001
+anova(xmdl.noage, xmdl, test = 'Chisq')		# p = 0.11
 anova(xmdl.noicon, xmdl, test = 'Chisq')	# p < 0.001
 
 ## Check this for whether onomatopoeitic words matter:
 
 childes_noOnom <- childes %>% filter(Onomatopoetic == 0)
 xmdl.noOnom <- lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
 	(1 + Age_z|Word), data = childes_noOnom, REML = F)
 xmdl.noOnom.noint <- lmer(LogChild ~ Iconicity_z + Age_z + 
-	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
 	(1 + Age_z|Word), data = childes_noOnom, REML = F)
 anova(xmdl.noOnom.noint, xmdl.noOnom, test = 'Chisq')
 
+## Check main effect of iconicity without onomatopoetic words:
+
+xmdl.noOnom.noicon <- lmer(LogChild ~ Age_z + Iconicity_z:Age_z + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + POS + 
+	(1 + Age_z|Word), data = childes_noOnom, REML = F)
+anova(xmdl.noOnom.noicon, xmdl.noOnom, test = 'Chisq')
+
+## For sanity check, see whether a model of relative frequency, i.e.,
+## freq divided by total word productions per age, gives the same result:
+
+xmdl.rel <- lmer(LogRelative ~ Iconicity_z + Age_z + Iconicity_z:Age_z + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + POS + 
+	(1 + Age_z|Word), data = childes, REML = F)
+summary(xmdl.rel)	# inspect, same
+
 ## Make a 3D plot of this:
-## (based on code by Roger Mundry)
 
 library(rsm)
 mdl.red <- lm(LogChild ~ Age_z * Iconicity_z, data = childes)
-persp(mdl.red, Age_z ~ Iconicity_z, zlab = 'LogChild',
-	col = 'lightgrey', theta = 45, phi = 25)
+persp(mdl.red, Age_z ~ Iconicity_z, zlab = 'Log Child Frequency',
+	col = 'lightgrey', theta = 45, phi = 25,
+	xlabs = c('Age (z-cored)', 'Iconicity (z-scored)'))
 
 ## Fit a model of iconicity on adult frequencies:
 
-icon <- icon %>% mutate(Conc_c = Conc - mean(Conc, na.rm = T),
-	NMorph_c = NMorph - mean(NMorph, na.rm = T),
-	Iconicity_z = (Iconicity - mean(Iconicity, na.rm = T)) / sd(Iconicity, na.rm = T))
 summary(xmdl.adult <- lm(ANC_LogFreq ~ Iconicity_z + 
 	Conc_c + NMorph_c + POS, data = icon))
 anova(xmdl.adult)
 
 ## Fit a model of iconicity on parental input frequencies:
 
-icon <- icon %>% mutate(LogParent = log10(ParentalInputRawFreq),
-	ANC_LogFreq_c = ANC_LogFreq - mean(ANC_LogFreq, na.rm = T))
 summary(xmdl.parent <- lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +
 	Conc_c + NMorph_c + POS, data = icon))
 anova(xmdl.parent)
@@ -354,6 +421,13 @@ qqnorm(residuals(xmdl.adult))
 qqline(residuals(xmdl.adult))	# perfect
 qqnorm(residuals(xmdl.parent))
 qqline(residuals(xmdl.parent))	# perfect
+
+## Adult models without onomatopoeia:
+
+anova(lm(ANC_LogFreq ~ Iconicity_z + 
+	Conc_c + NMorph_c + POS, data = noOnom))	# adult-directed
+anova(lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +
+	Conc_c + NMorph_c + POS, data = noOnom))	# child-directed
 
 
 
@@ -407,9 +481,18 @@ source('/Users/teeniematlock/Desktop/research/iconicity/AOA_paper/analysis/predi
 
 xpred <- predict.glmm(xmdl.plot, newdata = xpred)
 
+## Get predictions for average age (for comparison):
+
+xpred.mean <- data.frame(Iconicity_z = xvals,
+	Age_z = 0,
+	Conc_c = 0, NMorph_c = 0, ANC_LogFreq_c = 0, LogParent_c = 0)
+xpred.mean <- predict.glmm(xmdl.plot, newdata = xpred.mean)
+
 ## Restrict to observed range:
 
 xpred <- xpred %>% filter(Iconicity_z >= min(childes$Iconicity_z),
+	Iconicity_z <= max(childes$Iconicity_z))
+xpred.mean <- xpred.mean %>% filter(Iconicity_z >= min(childes$Iconicity_z),
 	Iconicity_z <= max(childes$Iconicity_z))
 
 age12 <- xpred[xpred$Age_z == age_vals[1], ]
@@ -450,6 +533,13 @@ points(x = age69$Iconicity_z[-c(1:2, nrow(age69) - 1, nrow(age69))],
 polygon(x = c(age69$Iconicity_z, rev(age69$Iconicity_z)),
 	y = c(age69$UB, rev(age69$LB)),
 	border = NA, col = rgb(0, 0, 0, 0.4))
+# Plot lines, average age:
+points(x = xpred.mean$Iconicity_z[-c(1:2, nrow(xpred.mean) - 1, nrow(xpred.mean))],
+	y = xpred.mean$LogChild[-c(1:2, nrow(xpred.mean) - 1, nrow(xpred.mean))],
+	type = 'l', lwd = 4)
+polygon(x = c(xpred.mean$Iconicity_z, rev(xpred.mean$Iconicity_z)),
+	y = c(xpred.mean$UB, rev(xpred.mean$LB)),
+	border = NA, col = rgb(0, 0, 0, 0.4))
 ## Add labels:
 text(x = 2.25,
 	y = 0.94,
@@ -489,12 +579,12 @@ polygon(x = c(xvals_red, rev(xvals_red)),
 	y = c(parent.pred$UB, rev(parent.pred$LB)),
 	border = NA, col = rgb(0, 0, 0, 0.4))
 ## Add labels:
-text(x = 1.35,
-	y = 2.03,
+text(x = 1.45,
+	y = 1.83,
 	labels = 'Child-directed',
 	font = 2, cex = 1.25, adj = c(0.5, NA),
-	srt = 27)
-text(x = 1.35,
+	srt = 25)
+text(x = 1.45,
 	y = 1,
 	labels = 'Adult-directed',
 	font = 2, cex = 1.25, adj = c(0.5, NA),
@@ -542,7 +632,8 @@ CHILD <- CHILD %>% filter(!name %in% not_these)
 child_long <- table(CHILD$name, CHILD$age)
 child_long <- apply(child_long, 1, FUN = function(x) sum(x != 0))
 not_these <- names(child_long[child_long <= 5])
-CHILD <- CHILD %>% filter(!name %in% not_these)
+CHILD <- CHILD %>%
+	filter(!name %in% not_these)
 
 ## Sum frequencies over sessions:
 
@@ -554,9 +645,10 @@ CHILD_freqs <- CHILD %>%
 ## Append cumulative frequencies per age:
 
 CHILD_freqs <- CHILD_freqs %>%
-	group_by(name, ANC_LogFreq_c, POS, NMorph_c, Conc_c, Onomatopoetic,
-		age) %>%
-	summarise(freq_all = sum(freq)) %>% right_join(CHILD_freqs)
+	group_by(name, ANC_LogFreq_c, POS, NMorph_c,
+		Conc_c, Onomatopoetic, age) %>%
+			summarise(freq_all = sum(freq)) %>%
+				right_join(CHILD_freqs)
 
 ## Compute weighted means:
 
