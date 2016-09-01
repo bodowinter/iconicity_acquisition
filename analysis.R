@@ -390,6 +390,26 @@ xmdl.rel <- lmer(LogRelative ~ Iconicity_z + Age_z + Iconicity_z:Age_z +
 	(1 + Age_z|Word), data = childes, REML = F)
 summary(xmdl.rel)	# inspect, same
 
+## For reporting get coefficients without POS:
+# (otherwise the reported slope is only for one lexical category)
+
+# main effect model M5
+summary(lmer(LogChild ~ Iconicity_z + Age_z + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + 
+	(1 + Age_z|Word), data = childes, REML = F))
+# main effect model M5 without onomatopoeia
+summary(lmer(LogChild ~ Iconicity_z + Age_z + 
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + 
+	(1 + Age_z|Word), data = childes_noOnom, REML = F))
+# interaction effect model M6
+summary(lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z +
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + 
+	(1 + Age_z|Word), data = childes, REML = F))
+# interaction effect model M6 without onomatopoeia
+summary(lmer(LogChild ~ Iconicity_z + Age_z + Iconicity_z:Age_z +
+	Conc_c + NMorph_c + ANC_LogFreq_c + LogParent_c + LogOverall_c + 
+	(1 + Age_z|Word), data = childes_noOnom, REML = F))
+
 ## Make a 3D plot of this:
 
 library(rsm)
@@ -413,6 +433,11 @@ summary(xmdl.parent.nocontrol <- lm(LogParent ~ Iconicity_z +
 	Conc_c + NMorph_c + POS, data = icon))
 anova(xmdl.parent.nocontrol)
 
+# for reporting in text:
+
+summary(lm(LogParent ~ Iconicity_z + 
+	Conc_c + NMorph_c , data = icon))
+
 ## Model validation:
 
 plot(fitted(xmdl.adult), residuals(xmdl.adult))
@@ -429,6 +454,19 @@ anova(lm(ANC_LogFreq ~ Iconicity_z +
 anova(lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +
 	Conc_c + NMorph_c + POS, data = noOnom))	# child-directed
 
+## For reporting, models without POS:
+
+summary(lm(ANC_LogFreq ~ Iconicity_z + 
+	Conc_c + NMorph_c, data = icon))
+# adult-adult M8, no onomatopoeia
+summary(lm(ANC_LogFreq ~ Iconicity_z + 
+	Conc_c + NMorph_c, data = noOnom))
+# parental input M9
+summary(lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +
+	Conc_c + NMorph_c, data = icon))
+# parental input M9, no onomatopoeia
+summary(lm(LogParent ~ Iconicity_z + ANC_LogFreq_c +
+	Conc_c + NMorph_c, data = noOnom))
 
 
 
@@ -714,7 +752,7 @@ anova(xmdl.null, xmdl)
 sum(coef(xmdl)$name[, 2] > 0)	# 10 children had positive slopes
 nrow(coef(xmdl)$name)	# of 150!
 
-## With covariates:
+## With covariates (this is M7 in Table 2):
 
 summary(xmdl.covar <- lmer(iconicity ~ age01 +
 	NMorph_c + ANC_LogFreq_c + Conc_c + 
@@ -738,9 +776,13 @@ CHILD_means_onom <- CHILD_freqs %>%
 CHILD_means_onom <- CHILD_means_onom %>%
 	group_by(name) %>%
 		mutate(age01 = (age - min(age)) / diff(range(age)))
-summary(xmdl <- lmer(iconicity ~ age01 + (1 + age01|name),
+summary(xmdl <- lmer(iconicity ~ age01 +
+	NMorph_c + ANC_LogFreq_c + Conc_c +
+	(1 + age01|name),
 	data = CHILD_means_onom, REML = F))
-xmdl.null <- lmer(iconicity ~ 1 + (1 + age01|name),
+xmdl.null <- lmer(iconicity ~ 1 +
+	NMorph_c + ANC_LogFreq_c + Conc_c +
+	(1 + age01|name),
 	data = CHILD_means_onom, REML = F)
 anova(xmdl.null, xmdl)
 
